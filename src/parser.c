@@ -18,6 +18,7 @@
 static void expect_token(TokenType expected_type, Scanner *scanner);
 static void parse_block(Scanner *scanner);
 static void parse_variable_declaration(Scanner *scanner);
+static void parse_variable_assigning(Scanner *scanner);
 static void parse_if_statement(Scanner *scanner);
 static void parse_while_statement(Scanner *scanner);
 static void parse_return_statement(Scanner *scanner);
@@ -202,6 +203,10 @@ DataType parse_type(Scanner *scanner)
         current_token = get_next_token(scanner); // Обновляем токен после разбора типа
         return TYPE_VOID;
     }
+    else if (current_token.type == TOKEN_ASSIGN)
+    {
+        return TYPE_UNKNOWN;
+    }
     else
     {
         error_exit(ERR_SYNTAX, "Expected type.");
@@ -268,12 +273,27 @@ void parse_statement(Scanner *scanner)
     {
         parse_return_statement(scanner); // Обрабатываем return
     }
-    else
+    else if (current_token.type == TOKEN_IDENTIFIER)
     {
         // Parse as an expression statement
-        parse_expression(scanner);
-        expect_token(TOKEN_SEMICOLON, scanner); // Expressions end with a semicolon
+        parse_variable_assigning(scanner);
     }
+}
+
+void parse_variable_assigning(Scanner *scanner)
+{
+    LOG("DEBUG_PARSER: Parsing variable assigning\n");
+    Symbol *symbol = symtable_search(&symtable, current_token.lexeme);
+    if (symbol == NULL)
+    {
+        error_exit(ERR_SYNTAX, "Variable is not defined.");
+    }
+    current_token = get_next_token(scanner);
+    expect_token(TOKEN_ASSIGN, scanner);
+    parse_expression(scanner);
+
+    //current_token = get_next_token(scanner);
+    expect_token(TOKEN_SEMICOLON, scanner);
 }
 
 // Function to parse a variable declaration
@@ -310,9 +330,13 @@ void parse_variable_declaration(Scanner *scanner)
     // Parse the expression being assigned
     DataType expr_type = parse_expression(scanner);
 
-    if(declaration_type != TYPE_UNKNOWN && expr_type != declaration_type)
+    if (declaration_type != TYPE_UNKNOWN && expr_type != declaration_type)
     {
         error_exit(ERR_SEMANTIC, "Declarated type of variable is not matching.");
+    }
+    else if (declaration_type == TYPE_UNKNOWN)
+    {
+        declaration_type = expr_type;
     }
 
     // Semantically check if the types are compatible
@@ -330,7 +354,6 @@ void parse_variable_declaration(Scanner *scanner)
         error_exit(ERR_SEMANTIC, "Variable already defined.");
     }
 
-    // Symbol new_var = {.name = variable_name, .symbol_type = SYMBOL_VARIABLE, .data_type = expr_type, .is_defined = true}; //!!!!!!!!! MALLOC
     Symbol *new_var = (Symbol *)malloc(sizeof(Symbol));
     if (new_var == NULL)
     {
@@ -414,14 +437,30 @@ DataType parse_expression(Scanner *scanner)
 {
     LOG("DEBUG_PARSER: Parsing expression\n");
 
-    DataType expression_type =  parse_primary_expression(scanner); // Parse the first operand or literal
+    DataType expression_type = parse_primary_expression(scanner); // Parse the first operand or literal
 
+
+    if(current_token.type != TOKEN_SEMICOLON && current_token.type != TOKEN_RIGHT_PAREN)
+    {
     current_token = get_next_token(scanner);
+    }
     // If there is a binary operation, check its type
     if (current_token.type == TOKEN_PLUS || current_token.type == TOKEN_MINUS ||
         current_token.type == TOKEN_MULTIPLY || current_token.type == TOKEN_DIVIDE)
     {
-        return parse_binary_operation(scanner);
+        DataType binary_operation_type = parse_binary_operation(scanner);
+        if (expression_type != binary_operation_type)
+        {
+            error_exit(ERR_SEMANTIC, "Conflicting types of expression");
+        }
+    }
+    if (current_token.type != TOKEN_SEMICOLON && current_token.type != TOKEN_RIGHT_PAREN)
+    {
+        DataType next_expression_type = parse_expression(scanner);
+        if (next_expression_type != expression_type)
+        {
+            error_exit(ERR_SEMANTIC, "Conflicting types of expression");
+        }
     }
     return expression_type; // Default case, if no specific type was identified
 }
@@ -432,17 +471,17 @@ static DataType parse_primary_expression(Scanner *scanner)
     LOG("DEBUG_PARSER: Parsing parsing primary expression\n");
     if (current_token.type == TOKEN_INT_LITERAL)
     {
-        //current_token = get_next_token(scanner);
+        // current_token = get_next_token(scanner);
         return TYPE_INT;
     }
     else if (current_token.type == TOKEN_FLOAT_LITERAL)
     {
-        //current_token = get_next_token(scanner);
+        // current_token = get_next_token(scanner);
         return TYPE_FLOAT;
     }
     else if (current_token.type == TOKEN_STRING_LITERAL)
     {
-        //current_token = get_next_token(scanner);
+        // current_token = get_next_token(scanner);
         return TYPE_STRING;
     }
     else if (current_token.type == TOKEN_IDENTIFIER)
@@ -484,7 +523,7 @@ static DataType parse_primary_expression(Scanner *scanner)
         expect_token(TOKEN_RIGHT_PAREN, scanner);       // Expect ')'
         return expr_type;
     }
-    else
+    else 
     {
         error_exit(ERR_SYNTAX, "Expected literal, identifier, or '(' for expression.");
         return TYPE_UNKNOWN;
@@ -505,7 +544,7 @@ static DataType parse_binary_operation(Scanner *scanner)
         operator_type == TOKEN_MULTIPLY || operator_type == TOKEN_DIVIDE)
     {
         // For now, assuming operations between INT and FLOAT are allowed
-        current_token = get_next_token(scanner);
+        // current_token = get_next_token(scanner);
         return rhs_type;
     }
 
