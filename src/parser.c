@@ -22,7 +22,9 @@ static void parse_variable_assigning(Scanner *scanner);
 static void parse_if_statement(Scanner *scanner);
 static void parse_while_statement(Scanner *scanner);
 static void parse_return_statement(Scanner *scanner);
+static DataType parse_boolean_expression(Scanner *scanner);
 static DataType parse_primary_expression(Scanner *scanner);
+static DataType parse_boolean_operation(Scanner *scanner);
 static DataType parse_binary_operation(Scanner *scanner);
 DataType parse_type(Scanner *scanner);        // Объявляем функцию заранее
 DataType parse_return_type(Scanner *scanner); // Объявляем функцию заранее
@@ -292,7 +294,7 @@ void parse_variable_assigning(Scanner *scanner)
     expect_token(TOKEN_ASSIGN, scanner);
     parse_expression(scanner);
 
-    //current_token = get_next_token(scanner);
+    // current_token = get_next_token(scanner);
     expect_token(TOKEN_SEMICOLON, scanner);
 }
 
@@ -369,6 +371,56 @@ void parse_variable_declaration(Scanner *scanner)
     symtable_insert(&symtable, variable_name, new_var);
 }
 
+DataType parse_boolean_expression(Scanner *scanner)
+{
+    LOG("DEBUG_PARSER: Parsing boolean expression\n");
+    DataType expression_type = parse_primary_expression(scanner);
+
+    current_token = get_next_token(scanner);
+
+    if (current_token.type == TOKEN_EQUAL || current_token.type == TOKEN_NOT_EQUAL || current_token.type == TOKEN_LESS || current_token.type == TOKEN_GREATER || current_token.type == TOKEN_GREATER_EQUAL || current_token.type == TOKEN_LESS_EQUAL)
+    {
+        DataType boolean_operation_type = parse_boolean_operation(scanner);
+        if (expression_type != boolean_operation_type)
+        {
+            error_exit(ERR_SEMANTIC, "Conflicting types of expression");
+        }
+        expression_type = TYPE_BOOL;
+    }
+    else
+    {
+        return TYPE_UNKNOWN;
+    }
+    if (current_token.type != TOKEN_RIGHT_PAREN)
+    {
+        DataType next_expression_type = parse_boolean_expression(scanner);
+        if (next_expression_type != expression_type)
+        {
+            error_exit(ERR_SEMANTIC, "Conflicting types of expression");
+        }
+    }
+    return expression_type; // Default case, if no specific type was identified
+}
+
+DataType parse_boolean_operation(Scanner *scanner)
+{
+    LOG("DEBUG_PARSER: Parsing boolean operation\n");
+    TokenType operator_type = current_token.type;
+    current_token = get_next_token(scanner); // Move to the next token after operator
+
+    DataType rhs_type = parse_primary_expression(scanner); // Parse the right-hand side of the operation
+
+    // Check the compatibility of types for binary operations
+    if (operator_type == TOKEN_EQUAL || operator_type == TOKEN_NOT_EQUAL || operator_type == TOKEN_LESS ||
+        operator_type == TOKEN_GREATER || operator_type == TOKEN_GREATER_EQUAL || operator_type == TOKEN_LESS_EQUAL)
+    {
+        // For now, assuming operations between INT and FLOAT are allowed
+        // current_token = get_next_token(scanner);
+        return rhs_type;
+    }
+    return TYPE_UNKNOWN;
+}
+
 // Function to parse an if statement
 void parse_if_statement(Scanner *scanner)
 {
@@ -376,7 +428,7 @@ void parse_if_statement(Scanner *scanner)
     expect_token(TOKEN_IF, scanner);         // 'if'
     expect_token(TOKEN_LEFT_PAREN, scanner); // '('
 
-    DataType cond_type = parse_expression(scanner); // Condition expression
+    DataType cond_type = parse_boolean_expression(scanner); // Condition expression
 
     // Semantic check for boolean condition
     if (cond_type != TYPE_BOOL)
@@ -439,10 +491,9 @@ DataType parse_expression(Scanner *scanner)
 
     DataType expression_type = parse_primary_expression(scanner); // Parse the first operand or literal
 
-
-    if(current_token.type != TOKEN_SEMICOLON && current_token.type != TOKEN_RIGHT_PAREN)
+    if (current_token.type != TOKEN_SEMICOLON && current_token.type != TOKEN_RIGHT_PAREN)
     {
-    current_token = get_next_token(scanner);
+        current_token = get_next_token(scanner);
     }
     // If there is a binary operation, check its type
     if (current_token.type == TOKEN_PLUS || current_token.type == TOKEN_MINUS ||
@@ -523,7 +574,7 @@ static DataType parse_primary_expression(Scanner *scanner)
         expect_token(TOKEN_RIGHT_PAREN, scanner);       // Expect ')'
         return expr_type;
     }
-    else 
+    else
     {
         error_exit(ERR_SYNTAX, "Expected literal, identifier, or '(' for expression.");
         return TYPE_UNKNOWN;
