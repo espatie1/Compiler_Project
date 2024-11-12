@@ -14,3 +14,21 @@ char* string_duplicate(const char* src) {
     }
     return copy;
 }
+
+
+void remove_decimal(char* str) {
+    // Ищем позицию точки
+    char* dot = strchr(str, '.');
+    if (dot != NULL) {
+        // Обнуляем символ после точки
+        *dot = '\0';
+    }
+}
+
+void add_decimal(char* str) {
+    // Ищем позицию точки
+    if (strchr(str, '.') == NULL) {
+        // Если точки нет, добавляем ".0" в конец строки
+        strcat(str, ".0");
+    }
+}

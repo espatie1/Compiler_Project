@@ -1,47 +1,49 @@
 #ifndef CODEGEN_H
 #define CODEGEN_H
 
+#include "ast.h" // Подключаем заголовочный файл с определением структуры AST
 #include <stdio.h>
-#include "symtable.h"
 
-// Initialize code generator
-void codegen_init(FILE *output_file);
+// Инициализация генератора кода (например, открытие файлов вывода)
+void codegen_init(const char *filename);
 
-// Finalize code generation
+// Завершение работы генератора кода (например, закрытие файлов)
 void codegen_finalize();
 
-// Generate code for program start
-void codegen_program_start();
+// Функция для генерации кода для всей программы
+void codegen_generate_program(ASTNode *program_node);
 
-// Generate code for program end
-void codegen_program_end();
+// Функция для генерации кода для отдельной функции
+void codegen_generate_function(ASTNode *function_node);
 
-// Generate code for function definition
-void codegen_function_start(char *function_name);
+// Функция для генерации блока операторов
+void codegen_generate_block(FILE *output, ASTNode *block_node);
 
-// Generate code for function end
-void codegen_function_end();
+// Функция для генерации кода для отдельного оператора
+void codegen_generate_statement(FILE *output, ASTNode *statement_node);
 
-// Generate code for variable declaration
-void codegen_declare_variable(Symbol *variable);
+// Функция для генерации кода для выражения
+void codegen_generate_expression(FILE *output, ASTNode *expression_node);
 
-// Generate code for assignment
-void codegen_assignment(Symbol *variable, Symbol *expression);
+// Функция для генерации вызова функции
+void codegen_generate_function_call(FILE *output, ASTNode *node);
 
-// Generate code for expressions (e.g., addition, subtraction, etc.)
-void codegen_expression(Symbol *result, Symbol *lhs, char operator, Symbol *rhs);
+// Функция для генерации объявления переменной
+void codegen_generate_variable_declaration(FILE *output, ASTNode *declaration_node);
 
-// Generate code for if statement
-void codegen_if_start(int label_number);
-void codegen_if_else(int label_number);
-void codegen_if_end(int label_number);
+// Функция для генерации присваивания
+void codegen_generate_assignment(FILE *output, ASTNode *assignment_node);
 
-// Generate code for while loop
-void codegen_while_start(int label_number);
-void codegen_while_condition(int label_number);
-void codegen_while_end(int label_number);
+// Функция для генерации оператора return
+void codegen_generate_return(FILE *output, ASTNode *return_node);
 
-// Generate code for return statement
-void codegen_return(Symbol *return_value);
+// Функция для генерации оператора if
+void codegen_generate_if(FILE *output, ASTNode *if_node);
+
+// Функция для генерации оператора while
+void codegen_generate_while(FILE *output, ASTNode *while_node);
+
+// Вспомогательная функция для получения уникальной метки (если требуется)
+int generate_unique_label();
 
 #endif // CODEGEN_H

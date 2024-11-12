@@ -1,6 +1,34 @@
+const ifj = @import("ifj24.zig");
 
-pub fn main() i32 {
-    var a : i32 = (((0 + 0) * (1 + 1 / (10000))));
-	return 0;
+pub fn main() void {
+    // Variable declaration and initialization
+    var x: i32 = 42;
+    var y: i32 = 16;
+    var z: i32 = x + y;
+    return;
+    // Variable declarations and assignments
+    var a: i32 = 10;
+    var b: i32 = 20;
+    var result: i32 = a + b;
+    // Print the result of addition
+    ifj.write("The result of a + b is: ");
+    ifj.write(result);
+    ifj.  write("\n");
+    // Simple condition
+    if (result > 20) {
+        ifj     .write("The result is greater than 20\n");
+    } else {
+        ifj.            write("The result is 20 or less\n");
+    }
+    // While loop example
+    var counter: i32 = 3;
+    while (counter > 0) {
+        ifj.write("Counter: ");
+        ifj.write(counter);
+        ifj.write("\n");
+        counter = counter - 1;
+    }
+    ifj.write("Loop finished!\n");
+    // Returning from main (dummy return value)
+    return;
 }
-

@@ -1,0 +1,68 @@
+.IFJcode24
+LABEL main
+PUSHFRAME
+PUSHS int@42
+DEFVAR x
+POPS x
+PUSHS int@16
+DEFVAR y
+POPS y
+PUSHS LF@x
+PUSHS LF@y
+ADDS
+DEFVAR z
+POPS z
+PUSHS int@10
+DEFVAR a
+POPS a
+PUSHS int@20
+DEFVAR b
+POPS b
+PUSHS LF@a
+PUSHS LF@b
+ADDS
+DEFVAR result
+POPS result
+PUSHS string@The\032result\032of\032a\032+\032b\032is:\032
+WRITE
+PUSHS LF@result
+WRITE
+PUSHS string@\010
+WRITE
+PUSHS LF@result
+PUSHS int@20
+GTS
+PUSHS bool@true
+JUMPIFNEQS $else_0
+PUSHS string@The\032result\032is\032greater\032than\03220\010
+WRITE
+JUMP $endif_0
+LABEL $else_0
+PUSHS string@The\032result\032is\03220\032or\032less\010
+WRITE
+LABEL $endif_0
+PUSHS int@3
+DEFVAR counter
+POPS counter
+LABEL $while_start_1
+PUSHS LF@counter
+PUSHS int@0
+GTS
+PUSHS bool@true
+JUMPIFNEQS $while_end_1
+PUSHS string@Counter:\032
+WRITE
+PUSHS LF@counter
+WRITE
+PUSHS string@\010
+WRITE
+PUSHS LF@counter
+PUSHS int@1
+SUBS
+POPS counter
+JUMP $while_start_1
+LABEL $while_end_1
+PUSHS string@Loop\032finished!\010
+WRITE
+POPFRAME
+RETURN

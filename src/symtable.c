@@ -57,13 +57,13 @@ unsigned int symtable_hash(char *key, int size) {
         error_exit(ERR_INTERNAL, "NULL key passed to symtable_hash");
     }
     LOG("DEBUG_SYMTABLE: symtable_search called with key: %s\n", key);
-    unsigned int hash = 0;
-    while (*key) {
-        hash = (hash << 5) + *key++;
+    unsigned long hash = 5381;
+    int c;
+    while ((c = *key++)) {
+        hash = ((hash << 5) + hash) + c; // hash * 33 + c
     }
     return hash % size;
 }
-
 // Inserts a symbol into the symbol table
 Symbol *symtable_insert(SymTable *symtable, char *key, Symbol *symbol) {
     // Проверка ключа и символа на NULL
@@ -146,6 +146,22 @@ Symbol *symtable_search(SymTable *symtable, char *key) {
 
     return NULL;  // Символ не найден
 }
+
+// Checks if all symbols in the table have is_used set to true
+bool is_symtable_all_used(SymTable *symtable) {
+    for (int i = 0; i < symtable->size; i++) {
+        Symbol *current = symtable->table[i];
+        while (current != NULL) {
+            // Проверка флага is_used для каждого символа
+            if (current->is_used == false) {
+                return false; // Если хотя бы один символ не использован
+            }
+            current = current->next;
+        }
+    }
+    return true; // Все символы использованы
+}
+
 
 
 // Removes a symbol from the symbol table
